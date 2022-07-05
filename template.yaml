@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: CFN Stacks Audit
+
+Parameters:
+  ecrImages:
+    Type: String
+  environments:
+    Type: String
+    AllowedValues:
+      - prod
+      - non_prod
+      - qa
+      - ue
+      
+
+Resources:
+  cfnStackAuditFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudformation-stack-audit-${environments}
+      PackageType: Image
+      ImageUri: !Ref ecrImage
+      ImageConfig:
+        Command:
+          - "cfn-iterator.handler"
+      Events:
+        InvocationLevel:
+          Type: Schedule
+          Properties:
+            Schdule: cron(0 3 * * ? *)
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: 
+                - cloudformation:*
+                - iam:*
+              Resource: "*"
+      Timeout: 180
